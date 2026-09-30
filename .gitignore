@@ -20,3 +20,6 @@ dbt/logs/
 dbt/dbt_packages/
 
 .DS_Store
+
+*.duckdb
+*.duckdb.wal

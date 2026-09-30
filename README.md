@@ -97,3 +97,13 @@ into the warehouse). See decision 0005 for why they are planted in two different
 | Duplicate and late events | web events | ~0.5% retry duplicates (same `event_id`) and ~2% late arrivals | pipeline tests |
 
 Same seed + same config = identical output.
+
+## Level pages and tags
+
+| Level | Status | Page | Tag |
+|---|---|---|---|
+| 0 Data foundation | In progress | [level-0](docs/levels/level-0.md) | none yet |
+| 1 Naive baseline | Planned | none yet | none yet |
+| 2 Context layer | Planned | none yet | none yet |
+| 3 MCP + governance | Planned | none yet | none yet |
+| 4+ Gated extensions | Planned | none yet | none yet |
