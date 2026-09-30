@@ -1,0 +1,369 @@
+version: 2
+models:
+- name: stg_google__campaigns
+  description: Google-style campaigns. Budget converted from micros to dollars.
+  columns:
+  - name: campaign_id
+    data_tests:
+    - unique
+    - not_null
+  - name: channel
+    data_tests:
+    - accepted_values:
+        arguments:
+          values:
+          - SEARCH
+          - SHOPPING
+          - VIDEO
+          - DISPLAY
+  - name: status
+    data_tests:
+    - accepted_values:
+        arguments:
+          values:
+          - ENABLED
+          - PAUSED
+          - REMOVED
+  - name: managed_by
+    data_tests:
+    - accepted_values:
+        arguments:
+          values:
+          - in_house
+          - agency
+  - name: daily_budget_usd
+    data_tests:
+    - expression_is_true:
+        arguments:
+          expression: daily_budget_usd > 0
+- name: stg_google__ad_groups
+  columns:
+  - name: ad_group_id
+    data_tests:
+    - unique
+    - not_null
+  - name: campaign_id
+    data_tests:
+    - relationships:
+        arguments:
+          to: ref('stg_google__campaigns')
+          field: campaign_id
+- name: stg_google__ads
+  columns:
+  - name: ad_id
+    data_tests:
+    - unique
+    - not_null
+  - name: ad_group_id
+    data_tests:
+    - relationships:
+        arguments:
+          to: ref('stg_google__ad_groups')
+          field: ad_group_id
+- name: stg_google__keywords
+  columns:
+  - name: keyword_id
+    data_tests:
+    - unique
+    - not_null
+- name: stg_google__ad_performance_daily
+  description: One row per ad per day in the Google account's own date (Pacific). Cannot be re-bucketed.
+  columns:
+  - name: ad_id
+    data_tests:
+    - relationships:
+        arguments:
+          to: ref('stg_google__ads')
+          field: ad_id
+  - name: cost_usd
+    data_tests:
+    - not_null
+    - expression_is_true:
+        arguments:
+          expression: cost_usd >= 0
+  - name: clicks
+    data_tests:
+    - expression_is_true:
+        arguments:
+          expression: clicks <= impressions
+  data_tests:
+  - unique_combination:
+      arguments:
+        columns:
+        - report_date
+        - ad_id
+- name: stg_google__keyword_performance_daily
+  data_tests:
+  - unique_combination:
+      arguments:
+        columns:
+        - report_date
+        - keyword_id
+  - expression_is_true:
+      arguments:
+        expression: clicks <= impressions
+- name: stg_google__auction_insights_daily
+  data_tests:
+  - unique_combination:
+      arguments:
+        columns:
+        - report_date
+        - campaign_id
+  - expression_is_true:
+      arguments:
+        expression: impression_share between 0 and 1 and overlap_rate between 0 and 1
+- name: stg_meta__campaigns
+  columns:
+  - name: campaign_id
+    data_tests:
+    - unique
+    - not_null
+  - name: status
+    data_tests:
+    - accepted_values:
+        arguments:
+          values:
+          - ACTIVE
+          - PAUSED
+          - ARCHIVED
+  - name: daily_budget_usd
+    data_tests:
+    - expression_is_true:
+        arguments:
+          expression: daily_budget_usd > 0
+- name: stg_meta__adsets
+  columns:
+  - name: ad_group_id
+    data_tests:
+    - unique
+    - not_null
+  - name: campaign_id
+    data_tests:
+    - relationships:
+        arguments:
+          to: ref('stg_meta__campaigns')
+          field: campaign_id
+- name: stg_meta__ads
+  columns:
+  - name: ad_id
+    data_tests:
+    - unique
+    - not_null
+  - name: ad_group_id
+    data_tests:
+    - relationships:
+        arguments:
+          to: ref('stg_meta__adsets')
+          field: ad_group_id
+- name: stg_meta__insights
+  description: 'One row per ad per day in Meta''s account date (Eastern), from the latest extract. `is_provisional` marks
+    days that only have Meta''s first, understated extract (the most recent three days).
+
+    '
+  columns:
+  - name: spend_usd
+    description: Not null only because both spend and amount_spent are read (Meta renamed the field on 2026-09-03).
+    data_tests:
+    - not_null
+    - expression_is_true:
+        arguments:
+          expression: spend_usd >= 0
+  - name: ad_id
+    data_tests:
+    - relationships:
+        arguments:
+          to: ref('stg_meta__ads')
+          field: ad_id
+  - name: clicks
+    data_tests:
+    - expression_is_true:
+        arguments:
+          expression: clicks <= impressions
+  data_tests:
+  - unique_combination:
+      arguments:
+        columns:
+        - report_date
+        - ad_id
+- name: stg_email__campaigns
+  columns:
+  - name: email_campaign_id
+    data_tests:
+    - unique
+    - not_null
+  - name: recipients
+    data_tests:
+    - expression_is_true:
+        arguments:
+          expression: recipients > 0
+- name: stg_email__daily_metrics
+  columns:
+  - name: email_campaign_id
+    data_tests:
+    - relationships:
+        arguments:
+          to: ref('stg_email__campaigns')
+          field: email_campaign_id
+  data_tests:
+  - unique_combination:
+      arguments:
+        columns:
+        - report_date
+        - email_campaign_id
+- name: stg_email__platform_fees
+  columns:
+  - name: fee_month
+    data_tests:
+    - unique
+    - not_null
+- name: stg_finance__budget_plan
+  description: Latest plan version per month and channel, with Finance's labels mapped to channel codes.
+  columns:
+  - name: channel
+    description: Null means a Finance label has no entry in the channel_map seed.
+    data_tests:
+    - not_null
+    - accepted_values:
+        arguments:
+          values:
+          - SEARCH
+          - SHOPPING
+          - PAID_SOCIAL
+          - VIDEO
+          - DISPLAY
+  - name: planned_spend_usd
+    data_tests:
+    - expression_is_true:
+        arguments:
+          expression: planned_spend_usd >= 0
+  data_tests:
+  - unique_combination:
+      arguments:
+        columns:
+        - plan_month
+        - channel
+- name: stg_shop__customers
+  columns:
+  - name: shop_customer_id
+    data_tests:
+    - unique
+    - not_null
+  - name: email_normalized
+    data_tests:
+    - unique
+    - not_null
+- name: stg_shop__orders
+  columns:
+  - name: order_id
+    data_tests:
+    - unique
+    - not_null
+  - name: shop_customer_id
+    data_tests:
+    - relationships:
+        arguments:
+          to: ref('stg_shop__customers')
+          field: shop_customer_id
+  - name: status
+    data_tests:
+    - accepted_values:
+        arguments:
+          values:
+          - paid
+  data_tests:
+  - expression_is_true:
+      arguments:
+        expression: abs(total - (subtotal - discount + shipping + tax)) < 0.02
+- name: stg_shop__order_items
+  columns:
+  - name: order_id
+    data_tests:
+    - relationships:
+        arguments:
+          to: ref('stg_shop__orders')
+          field: order_id
+  - name: product_id
+    data_tests:
+    - relationships:
+        arguments:
+          to: ref('stg_catalog__products')
+          field: product_id
+  - name: quantity
+    data_tests:
+    - expression_is_true:
+        arguments:
+          expression: quantity > 0
+- name: stg_shop__refunds
+  columns:
+  - name: refund_id
+    data_tests:
+    - unique
+    - not_null
+  - name: order_id
+    data_tests:
+    - relationships:
+        arguments:
+          to: ref('stg_shop__orders')
+          field: order_id
+  - name: refund_amount
+    data_tests:
+    - expression_is_true:
+        arguments:
+          expression: refund_amount > 0
+- name: stg_crm__customers
+  description: CRM customers with normalized email and phone and UTC timestamps. Contains PII.
+  columns:
+  - name: crm_id
+    data_tests:
+    - unique
+    - not_null
+  - name: email_normalized
+    data_tests:
+    - unique
+    - not_null
+  - name: marketing_opt_in
+    data_tests:
+    - not_null
+- name: stg_catalog__products
+  columns:
+  - name: product_id
+    data_tests:
+    - unique
+    - not_null
+  - name: unit_cost_usd
+    description: Finance-only. Masked for other roles once governance is added.
+    data_tests:
+    - expression_is_true:
+        arguments:
+          expression: unit_cost_usd < list_price_usd
+- name: stg_web__events
+  description: 'Deduplicated web events (first arrival per event_id). Sampled: sum `sample_weight` for sessions and session-based
+    rates.
+
+    '
+  columns:
+  - name: event_id
+    description: Uniqueness here is the proof that retry duplicates were removed.
+    data_tests:
+    - unique
+    - not_null
+  - name: event_type
+    data_tests:
+    - accepted_values:
+        arguments:
+          values:
+          - landing
+          - add_to_cart
+          - checkout_start
+          - purchase
+  - name: event_ts_utc
+    data_tests:
+    - not_null
+  - name: sample_weight
+    data_tests:
+    - accepted_values:
+        arguments:
+          values:
+          - 1.0
+          - 10.0
+          quote: false

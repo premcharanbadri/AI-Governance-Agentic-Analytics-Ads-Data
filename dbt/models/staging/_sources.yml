@@ -1,0 +1,33 @@
+version: 2
+
+sources:
+  - name: raw
+    description: >
+      Landed source files, loaded as-is by ingest/load_duckdb.py (DuckDB) or Snowflake stage/COPY later.
+      CSV columns are text; JSON and Parquet keep native types. Nothing here is cleaned.
+    schema: raw
+    tables:
+      - name: catalog_products
+      - name: crm_customers
+      - name: email_campaigns
+      - name: email_daily_metrics
+      - name: email_platform_fees
+      - name: finance_budget_plan
+      - name: google_campaigns
+      - name: google_ad_groups
+      - name: google_ads
+      - name: google_keywords
+      - name: google_ad_perf_daily
+      - name: google_keyword_perf_daily
+      - name: google_auction_insights_daily
+      - name: meta_campaigns
+      - name: meta_adsets
+      - name: meta_ads
+      - name: meta_insights
+        description: First extracts and restated finals together. `spend` was renamed `amount_spent` from 2026-09-03.
+      - name: shop_customers
+      - name: shop_orders
+      - name: shop_order_items
+      - name: shop_refunds
+      - name: web_events
+        description: Includes retry duplicates (same event_id) and late-arriving events.

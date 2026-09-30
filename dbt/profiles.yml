@@ -1,0 +1,9 @@
+# Safe to commit: no secrets here. The Snowflake target (added later) reads credentials from environment variables.
+lumen:
+  target: duckdb
+  outputs:
+    duckdb:
+      type: duckdb
+      path: "{{ env_var('LUMEN_DUCKDB_PATH', 'lumen.duckdb') }}"
+      schema: main
+      threads: 4

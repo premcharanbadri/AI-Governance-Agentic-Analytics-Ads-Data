@@ -1,0 +1,35 @@
+name: lumen
+version: "1.0.0"
+config-version: 2
+profile: lumen
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+
+vars:
+  # Decision 0006: certified attribution is last paid click within this many days.
+  attribution_window_days: 7
+  # Decision 0007: timestamps are stored in UTC; reporting dates are derived in this zone.
+  reporting_timezone: America/New_York
+  # Decision 0004: the benchmark snapshot date (the last day of data).
+  as_of_date: "2026-09-30"
+  # A customer is "lapsed" after this many days without an order.
+  lapsed_after_days: 180
+
+models:
+  lumen:
+    staging:
+      +materialized: view
+      +schema: staging
+    intermediate:
+      +materialized: table
+      +schema: intermediate
+    marts:
+      +materialized: table
+      +schema: marts
+
+seeds:
+  lumen:
+    +schema: staging
