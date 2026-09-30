@@ -1,0 +1,22 @@
+# Generated data is reproducible from code + config; never commit it.
+data/
+
+# Secrets (Snowflake keys, profiles) — never commit.
+*.p8
+*.pem
+.env
+profiles.yml
+profile.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+
+# dbt
+dbt/target/
+dbt/logs/
+dbt/dbt_packages/
+
+.DS_Store
