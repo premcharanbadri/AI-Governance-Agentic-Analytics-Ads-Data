@@ -33,3 +33,5 @@ jobs:
       - name: dbt build (models and tests)
         working-directory: dbt
         run: dbt build --profiles-dir .
+      - name: Check dbt output against the ground truth
+        run: python generator/check_dbt_outputs.py --scale 0.05 --data data --db dbt/lumen.duckdb

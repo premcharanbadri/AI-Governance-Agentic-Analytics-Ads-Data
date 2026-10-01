@@ -25,7 +25,7 @@ money formats, late and duplicate data, and restatements.
 | 3 | MCP server + tool-using agent + policy gateway | Accuracy, tool-use quality, red-team suite |
 | 4+ | Built only if evaluations justify them: multi-agent diagnostics, context ranking, second domain | Planted-anomaly diagnosis, definition selection |
 
-**Current status:** Level 0 — the data generator is complete (Passes 1–3, 108 checks) and the dbt staging layer is built and tested (22 models, 103 tests). Next: dbt intermediate models and marts, the benchmark, then Snowflake ingestion and the live stream. Open design items are in [docs/backlog.md](docs/backlog.md).
+**Current status:** Level 0 — the data generator is complete (Passes 1–3, 108 checks) and dbt's staging and intermediate layers are built and verified against the ground truth (122 dbt nodes, identity resolution and attribution). Next: dbt marts (star schema), the benchmark, then Snowflake ingestion and the live stream. Open design items are in [docs/backlog.md](docs/backlog.md).
 
 ## Repository layout
 
@@ -69,7 +69,10 @@ python generator/check_incidents.py --scale 0.05 --data data
 # Load the raw files into DuckDB and build the dbt project
 python ingest/load_duckdb.py --data data --db dbt/lumen.duckdb
 cd dbt && dbt build --profiles-dir .
+cd .. && python generator/check_dbt_outputs.py --data data --db dbt/lumen.duckdb   # dbt vs. ground truth
 ```
+
+DuckDB bakes the database file's name into its views, so rebuild the warehouse instead of renaming or copying the file under a new name.
 
 Run the steps in this order with the same `--scale`. `history.py` stops if Pass 1 used a different scale, and
 `incidents.py` refuses to run twice (re-run `history.py` to start from clean files).

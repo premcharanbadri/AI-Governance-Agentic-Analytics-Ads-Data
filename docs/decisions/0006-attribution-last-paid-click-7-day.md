@@ -21,14 +21,16 @@ time-decay, position-based) all give the same answer. The window is what changes
 
 ## Decision
 
-- **Rule:** last paid click. Direct or untagged visits do not override an earlier paid click (a strict
-  "last click" would credit the final direct visit and mark most later-visit orders as direct).
+- **Rule:** last tagged marketing touch: a paid click (Google `gclid` or Meta `fbclid`) or a tagged email link
+  (`utm_medium = email`). Direct or untagged visits do not override an earlier touch (a strict "last click" would
+  credit the final direct visit and mark most later-visit orders as direct). Email counts as a touch so email-driven
+  revenue is not left unattributed, even though email has no media spend to compute ROAS against (Q19).
 - **Window:** 7 days, set by the dbt variable `attribution_window_days` (default 7).
 - **Data used:** first-party web events only. Click IDs and UTM tags link a purchase to a campaign through the
   shared `anonymous_id`. No view-through credit, because there is no impression-level data.
 - **Unattributed orders are kept** in an explicit "unattributed" bucket, never dropped (Q34).
-- The attribution model stores each order's candidate click and its lag in days, so any window can be
-  recomputed downstream. Q35 ("recompute both quarters under one definition") becomes a parameter change.
+- The attribution model stores each order's candidate touch (up to a 30-day lookback, `attribution_max_lookback_days`)
+  and its lag in days, so any window can be recomputed downstream. Q35 ("recompute both quarters under one definition") becomes a parameter change.
 - The window is deliberately independent of Meta's platform setting. Meta's own window changed on
   2026-01-01; the certified first-party definition does not.
 

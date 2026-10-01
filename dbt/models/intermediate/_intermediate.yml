@@ -1,0 +1,53 @@
+version: 2
+
+models:
+  - name: int_customers_resolved
+    description: >
+      One row per shop customer with the matching CRM record (joined on normalized email). Customers who checked out
+      as guests have no CRM record. Contains PII.
+    columns:
+      - name: shop_customer_id
+        data_tests: [unique, not_null]
+      - name: email_normalized
+        meta: {classification: pii}
+        data_tests: [unique, not_null]
+      - name: crm_id
+        description: Null when the customer has no CRM record.
+        data_tests:
+          - unique
+      - name: zip
+        meta: {classification: pii}
+      - name: has_crm_record
+        data_tests: [not_null]
+
+  - name: int_order_attribution
+    description: >
+      One row per order with its certified attribution: the last tagged marketing touch (paid click or email link)
+      within the attribution window. Unattributed orders are kept with a reason in `attribution_status`.
+    data_tests:
+      - expression_is_true:
+          arguments:
+            expression: "is_attributed = (attribution_status = 'attributed')"
+      - expression_is_true:
+          arguments:
+            expression: "touch_lag_days is null or touch_lag_days >= 0"
+      - expression_is_true:
+          arguments:
+            expression: "(attribution_status = 'attributed') = (attributed_campaign_id is not null)"
+    columns:
+      - name: order_id
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_shop__orders')
+                field: order_id
+      - name: attribution_status
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [attributed, outside_window, no_marketing_touch, untracked]
+      - name: attribution_window_days
+        description: The certified window in force when the model was built (dbt variable attribution_window_days).

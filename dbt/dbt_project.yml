@@ -11,6 +11,8 @@ macro-paths: ["macros"]
 vars:
   # Decision 0006: certified attribution is last paid click within this many days.
   attribution_window_days: 7
+  # The attribution model keeps the last touch up to this far back, so any shorter window can be applied downstream.
+  attribution_max_lookback_days: 30
   # Decision 0007: timestamps are stored in UTC; reporting dates are derived in this zone.
   reporting_timezone: America/New_York
   # Decision 0004: the benchmark snapshot date (the last day of data).

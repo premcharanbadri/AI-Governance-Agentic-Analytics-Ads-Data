@@ -252,6 +252,8 @@ models:
     data_tests:
     - unique
     - not_null
+    meta:
+      classification: pii
 - name: stg_shop__orders
   columns:
   - name: order_id
@@ -321,9 +323,23 @@ models:
     data_tests:
     - unique
     - not_null
+    meta:
+      classification: pii
   - name: marketing_opt_in
     data_tests:
     - not_null
+  - name: phone_digits
+    meta:
+      classification: pii
+  - name: first_name
+    meta:
+      classification: pii
+  - name: last_name
+    meta:
+      classification: pii
+  - name: zip
+    meta:
+      classification: quasi_identifier
 - name: stg_catalog__products
   columns:
   - name: product_id
@@ -336,6 +352,8 @@ models:
     - expression_is_true:
         arguments:
           expression: unit_cost_usd < list_price_usd
+    meta:
+      classification: finance_restricted
 - name: stg_web__events
   description: 'Deduplicated web events (first arrival per event_id). Sampled: sum `sample_weight` for sessions and session-based
     rates.
@@ -367,3 +385,6 @@ models:
           - 1.0
           - 10.0
           quote: false
+  - name: ip_address
+    meta:
+      classification: pii

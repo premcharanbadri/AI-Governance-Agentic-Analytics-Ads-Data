@@ -27,3 +27,6 @@ dbt/*.duckdb.wal
 
 *.duckdb
 *.duckdb.wal
+
+# dbt creates this locally (anonymous user id)
+**/.user.yml
