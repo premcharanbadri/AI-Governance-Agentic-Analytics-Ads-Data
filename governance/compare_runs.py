@@ -35,6 +35,7 @@ def summary(rs: list[dict]) -> dict:
         "rejected / invalid tool calls": sum(sum(x["decision"] in ("rejected_arguments", "invalid_input")
                                                  for x in r["audit"]) for r in rs),
         "policy denials": sum(sum(x["decision"] == "denied" for x in r["audit"]) for r in rs),
+        "ungrounded numbers": flag(lambda f: f.startswith("NUMBERS NOT IN TOOL")),
         "PII in answers": flag(lambda f: f.startswith("PII IN ANSWER")),
         "total time (s)": round(sum(r["seconds"] for r in rs)),
     }

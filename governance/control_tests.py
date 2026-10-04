@@ -172,7 +172,7 @@ def main():
     ranked = r.get("rows", [])
     small = [row for row in ranked if row["orders"] == SUPPRESSED]
     shown = [row for row in ranked if row["orders"] != SUPPRESSED]
-    sizes = {z: n for z, n in truth.execute(f"""
+    sizes = {(z if z is not None else "(not on file)"): n for z, n in truth.execute(f"""
         SELECT c.zip, count(DISTINCT o.shop_customer_id) FROM staging.stg_shop__orders o
         LEFT JOIN intermediate.int_customers_resolved c USING (shop_customer_id)
         WHERE cast((o.order_ts_utc at time zone 'UTC') at time zone '{tz}' as date)
@@ -250,6 +250,27 @@ def main():
     record("CT-13", "An empty result is read as a real answer (run 1: Q02, Q10)", "Filter values and dates are "
            "validated against each dimension's type; unmatched queries are labelled as no data, not zero",
            "Preventive (gateway)", "The two malformed calls from run 1, plus other unusable inputs", checks)
+
+    # CT-14 the grounding check flags answer numbers that no tool returned (run 2, Q05)
+    from grounding import ungrounded_numbers
+    jul = json.dumps(call(analyst, "query_certified_metric", {"metric": "ad_spend", "group_by": ["channel"],
+                                                               "start_date": "2026-07-01", "end_date": "2026-07-31"}))
+    rows = json.loads(jul)["rows"]
+    ps = next(r["ad_spend"] for r in rows if r["channel"] == "PAID_SOCIAL")
+    exact = f"July paid social spend was ${ps:,.2f} on August 1, 2026."
+    off = f"July paid social spend was ${ps + 0.01:,.2f}."
+    checks = []
+    for label, text, want_flag in [
+            ("answer copies the tool value exactly", exact, False),
+            ("answer changes the value by one cent (run 2, Q05)", off, True),
+            ("answer rounds the value to whole dollars", f"About ${round(ps):,} on paid social.", False),
+            ("answer invents a figure the tools never returned", "Paid social ROAS was 1.8.", True),
+            ("dates and years in the answer are not treated as figures", "Data runs to September 30, 2026.", False)]:
+        flagged = ungrounded_numbers(text, [jul], "What was paid social spend in July 2026?")
+        checks.append((label, bool(flagged) == want_flag, f"flagged: {flagged}"))
+    record("CT-14", "The answer states a number the data does not support", "Grounding check: every number in an "
+           "answer must match a value the tools returned", "Detective (output)",
+           "Exact, miscopied, rounded and invented figures against a real tool result", checks)
 
     # CT-11 every call is in the audit log, with a reason for every denial
     lines = [json.loads(x) for x in LOG.read_text().splitlines()]
