@@ -1,0 +1,86 @@
+# Semantic layer v0 (draft). One definition per metric. The agent must resolve a metric here before
+# querying it; anything not listed is "not certified" and the agent must say so instead of guessing.
+# status: draft -> needs owner sign-off before it counts as certified for the Level 2 benchmark.
+
+version: "0.2.0"
+
+dimensions:
+  # type tells the gateway what a valid filter value looks like, so bad filters fail loudly instead of
+  # returning an empty result. date: YYYY-MM-DD, month: YYYY-MM, enum: one of `values`, text: any.
+  order_date:   {expr: "{local_date}", grain: order, type: date, description: "Order date in the reporting time zone"}
+  order_month:  {expr: "strftime({local_date}, '%Y-%m')", grain: order, type: month, description: "Order month, YYYY-MM"}
+  product_name: {expr: "p.product_name", grain: item, type: text, description: "Product name (filters match part of the name)"}
+  category:     {expr: "p.category", grain: item, type: enum, values: [Cookware, Kitchen Tools, Storage, Home Decor],
+                 description: "Product category"}
+  state:        {expr: "c.state", grain: order, type: text, description: "Customer state, two-letter code"}
+  zip:          {expr: "c.zip", grain: order, type: text, quasi_identifier: true,
+                 description: "Customer ZIP. Quasi-identifier: results are always small-cell checked"}
+  report_date:  {expr: "s.report_date", grain: spend, type: date, description: "Platform report date (platform-local day)"}
+  report_month: {expr: "strftime(s.report_date, '%Y-%m')", grain: spend, type: month, description: "Report month, YYYY-MM"}
+  channel:      {expr: "s.channel", grain: spend, type: enum, values: [SEARCH, SHOPPING, VIDEO, DISPLAY, PAID_SOCIAL],
+                 description: "Marketing channel"}
+  platform:     {expr: "s.platform", grain: spend, type: enum, values: [google, meta], description: "Ad platform"}
+
+metrics:
+  orders:
+    description: "Count of distinct paid orders."
+    expr: "COUNT(DISTINCT o.order_id)"
+    source: orders
+    synonyms: [order count, number of orders, purchases]
+    owner: analytics (draft)
+    status: draft
+    lineage: [staging.stg_shop__orders, staging.stg_shop__order_items, staging.stg_catalog__products, intermediate.int_customers_resolved]
+
+  purchasing_customers:
+    description: "Distinct customers with at least one paid order in the period. Not all-time customers, not CRM records."
+    expr: "COUNT(DISTINCT o.shop_customer_id)"
+    source: orders
+    synonyms: [customers, buyers, active customers]
+    owner: analytics (draft)
+    status: draft
+    lineage: [staging.stg_shop__orders, intermediate.int_customers_resolved]
+
+  item_revenue:
+    description: "Gross product sales: quantity x unit price. Before order-level discounts, shipping, tax and refunds."
+    expr: "SUM(oi.quantity * oi.unit_price)"
+    source: orders
+    synonyms: [revenue, sales, product revenue, gross sales]
+    owner: analytics (draft)
+    status: draft
+    lineage: [staging.stg_shop__orders, staging.stg_shop__order_items, staging.stg_catalog__products]
+
+  ad_spend:
+    description: "Google cost plus Meta spend in USD, by platform report date. Meta uses the latest restated version."
+    expr: "SUM(s.spend_usd)"
+    source: spend
+    synonyms: [spend, media spend, marketing spend, cost]
+    owner: marketing finance (draft)
+    status: draft
+    lineage: [staging.stg_google__ad_performance_daily, staging.stg_google__campaigns, staging.stg_meta__insights, staging.stg_meta__campaigns]
+
+# Deliberately not certified yet (Level 2 work): ROAS, CAC, conversion rate, net revenue after refunds.
+not_certified: [roas, cac, conversion_rate, net_revenue, ltv]
+
+sources:
+  orders: |
+    FROM staging.stg_shop__orders o
+    JOIN staging.stg_shop__order_items oi USING (order_id)
+    JOIN staging.stg_catalog__products p USING (product_id)
+    LEFT JOIN intermediate.int_customers_resolved c USING (shop_customer_id)
+  spend: |
+    FROM (
+      SELECT g.report_date, 'google' AS platform, gc.channel, g.cost_usd AS spend_usd
+      FROM staging.stg_google__ad_performance_daily g
+      JOIN staging.stg_google__campaigns gc USING (campaign_id)
+      UNION ALL
+      SELECT m.report_date, 'meta' AS platform, mc.channel, m.spend_usd
+      FROM staging.stg_meta__insights m
+      JOIN staging.stg_meta__campaigns mc USING (campaign_id)
+    ) s
+
+# Column that identifies a person for each source; used for small-cell suppression. Spend has none.
+customer_key:
+  orders: o.shop_customer_id
+date_column:
+  orders: "{local_date}"
+  spend: s.report_date
