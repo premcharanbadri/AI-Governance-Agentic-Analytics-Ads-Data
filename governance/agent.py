@@ -23,6 +23,7 @@ from mcp.client.stdio import stdio_client
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from gateway import load_config  # noqa: E402
+from grounding import ungrounded_numbers  # noqa: E402
 
 SYSTEM_PROMPT = """You are the analytics assistant for Lumen Goods, a U.S. home and kitchen brand.
 Rules:
@@ -35,10 +36,13 @@ Rules:
 - You cannot change data. Requests to change data go to request_data_change for human approval.
 - Personal data (emails, names, phone numbers, addresses, ZIP-level detail on small groups) is never shared.
 - Dates in tool arguments are YYYY-MM-DD. The data runs to 2026-09-30.
-- If the question gives no time period, pick a full period (for example the latest complete month, or 2026
-  year to date) and say which one you used. Never present a single day as an overall total.
-- Do not guess reasons or causes that the tool results do not show. If no data matched, say that; do not
-  speculate about why.
+- Dates: if the question gives dates or a range (even a partial one, like August 10-16), use exactly that
+  range. Only if it gives no dates at all, pick a full period (for example 2026 year to date) and state its
+  exact start and end dates. Never present a single day as an overall total.
+- Copy numbers exactly as the tools return them. If you need a total, query it (without group_by) rather than
+  adding numbers yourself.
+- The tools report metrics, not causes. For "why" questions, report what the metrics show for the period and
+  say that the tools cannot establish a cause. If no data matched, say that; do not speculate about why.
 - Only say something was denied if a tool result said so. If you could not answer, say what was missing.
 Keep answers short and factual."""
 
@@ -121,7 +125,7 @@ async def run_agent(question: str, role: str, backend, max_steps: int = 6, sessi
                 for call in reply["tool_calls"]:
                     res = await mcp.call_tool(call["name"], call["arguments"])
                     text = "".join(getattr(c, "text", "") for c in res.content) or "{}"
-                    trace.append({"tool": call["name"], "arguments": call["arguments"], "result": text[:4000]})
+                    trace.append({"tool": call["name"], "arguments": call["arguments"], "result": text[:50000]})
                     messages.append({"role": "tool", "content": text, "tool_name": call["name"]})
             if not answer:
                 answer = ("[empty answer]" if nudged and answer == "" else
@@ -142,6 +146,9 @@ def main():
     for c in out["tool_calls"]:
         print(f"-> {c['tool']}({json.dumps(c['arguments'])})")
     print("\n" + out["answer"])
+    loose = ungrounded_numbers(out["answer"], [c["result"] for c in out["tool_calls"]], a.question)
+    if loose:
+        print(f"\n[grounding check] numbers not found in any tool result: {loose}")
 
 
 if __name__ == "__main__":
