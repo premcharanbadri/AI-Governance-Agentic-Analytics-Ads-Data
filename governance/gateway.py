@@ -180,7 +180,8 @@ class PolicyGateway:
         if not hit:
             certified = sorted(self.sem["metrics"])
             return {"status": "not_certified",
-                    "note": f"'{name}' has no certified definition. Do not estimate it. Certified metrics: {certified}"}
+                    "note": f"'{name}' has no certified definition, so it cannot be reported or estimated. "
+                            f"Certified metrics: {certified}"}
         mname, spec = hit
         dims = [d for d, s in self.sem["dimensions"].items()
                 if s["grain"] in (("order", "item") if spec["source"] == "orders" else ("spend",))]
@@ -272,6 +273,10 @@ class PolicyGateway:
         rows = rows[:n_limit]
 
         matched = sum(r.pop("_source_rows") or 0 for r in rows)
+        for r in rows:            # a missing ZIP or state is a real group (e.g. guest checkouts), not a blank
+            for d in group_by:
+                if r.get(d) is None:
+                    r[d] = "(not on file)"
         suppressed = 0
         if ckey:   # small-cell suppression: never report a group of fewer than k people, and never as zero
             for r in rows:
@@ -285,8 +290,8 @@ class PolicyGateway:
                "suppressed_rows": suppressed}
         if suppressed:
             out["_decision"] = "suppressed"
-            out["note"] = (f"{suppressed} group(s) had fewer than {self.k} customers and were suppressed. "
-                           "Report them as suppressed, not as zero or missing.")
+            out["note"] = (f"{suppressed} group(s) had fewer than {self.k} customers (customers, not orders) and "
+                           "were suppressed. Report them as suppressed, not as zero or missing.")
         if matched == 0:
             rows = []
             out["rows"] = rows
