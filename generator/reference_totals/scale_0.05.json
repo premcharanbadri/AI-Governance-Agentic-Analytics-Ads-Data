@@ -1,0 +1,56 @@
+{
+  "scale": "0.05",
+  "library_versions": {
+    "numpy": "2.5.3",
+    "pandas": "3.0.6",
+    "Faker": "40.40.0",
+    "pyarrow": "25.0.1",
+    "duckdb": "1.5.6",
+    "dbt-core": "1.12.5",
+    "dbt-duckdb": "1.11.0",
+    "PyYAML": "6.0.3"
+  },
+  "row_counts": {
+    "raw.catalog_products": 120,
+    "raw.crm_customers": 41217,
+    "raw.email_campaigns": 185,
+    "raw.email_daily_metrics": 555,
+    "raw.email_platform_fees": 18,
+    "raw.finance_budget_plan": 99,
+    "raw.google_ad_groups": 272,
+    "raw.google_ad_perf_daily": 47778,
+    "raw.google_ads": 671,
+    "raw.google_auction_insights_daily": 7348,
+    "raw.google_campaigns": 146,
+    "raw.google_keyword_perf_daily": 29270,
+    "raw.google_keywords": 323,
+    "raw.meta_ads": 477,
+    "raw.meta_adsets": 157,
+    "raw.meta_campaigns": 89,
+    "raw.meta_insights": 52023,
+    "raw.shop_customers": 42500,
+    "raw.shop_order_items": 148910,
+    "raw.shop_orders": 89048,
+    "raw.shop_refunds": 6054,
+    "raw.web_events": 360720
+  },
+  "money": {
+    "staging.stg_shop__orders.subtotal": "7858084.43",
+    "staging.stg_shop__orders.discount": "185847.88",
+    "staging.stg_shop__orders.shipping": "366105.15",
+    "staging.stg_shop__orders.tax": "537158.89",
+    "staging.stg_shop__orders.total": "8575500.59",
+    "staging.stg_shop__refunds.refund_amount": "476660.43",
+    "staging.stg_google__ad_performance_daily.cost_usd": "934701.07",
+    "staging.stg_google__ad_performance_daily.platform_conversion_value": "2121603.37",
+    "staging.stg_meta__insights.spend_usd": "400538.16",
+    "staging.stg_meta__insights.platform_conversion_value": "695118.41",
+    "staging.stg_shop__order_items.quantity_x_unit_price": "7858084.43"
+  },
+  "keys": {
+    "distinct shop customers with orders": 34718,
+    "distinct orders": 89048,
+    "resolved customers": 42500,
+    "ground-truth entries": 23
+  }
+}

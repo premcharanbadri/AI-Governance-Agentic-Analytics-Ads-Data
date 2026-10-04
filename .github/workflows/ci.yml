@@ -35,3 +35,7 @@ jobs:
         run: dbt build --profiles-dir .
       - name: Check dbt output against the ground truth
         run: python generator/check_dbt_outputs.py --scale 0.05 --data data --db dbt/lumen.duckdb
+      - name: Reconcile the build against the reference totals
+        run: python generator/reconcile.py --scale 0.05
+      - name: Governance control tests (no LLM)
+        run: python governance/control_tests.py

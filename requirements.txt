@@ -1,7 +1,14 @@
-numpy>=2.0
-pandas>=2.2
-faker>=30.0
-pyyaml>=6.0
-pyarrow>=15.0
-duckdb>=1.1
-dbt-duckdb>=1.9
+# Data libraries are pinned exactly: a different numpy version changes the generated data (decision 0009).
+# generator/reconcile.py checks a build against the signed-off reference totals.
+numpy==2.5.3
+pandas==3.0.6
+Faker==40.40.0
+PyYAML==6.0.3
+pyarrow==25.0.1
+duckdb==1.5.6
+dbt-core==1.12.5
+dbt-duckdb==1.11.0
+# Governance layer (does not affect the generated data)
+mcp==2.3.0
+ollama>=0.6
+sqlglot>=30.0

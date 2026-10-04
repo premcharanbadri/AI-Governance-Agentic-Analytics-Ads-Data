@@ -27,6 +27,8 @@ money formats, late and duplicate data, and restatements.
 
 **Current status:** Level 0 — the data generator is complete (Passes 1–3, 108 checks) and dbt's staging and intermediate layers are built and verified against the ground truth (122 dbt nodes, identity resolution and attribution). Next: dbt marts (star schema), the benchmark, then Snowflake ingestion and the live stream. Open design items are in [docs/backlog.md](docs/backlog.md).
 
+**Governance preview:** a working early version of the Level 3 controls (policy gateway, MCP server, local Qwen agent, control tests and a small red-team set) is in [governance/](governance/README.md). It tests whether the controls work; it does not replace the benchmark ladder ([decision 0008](docs/decisions/0008-governance-preview-before-benchmark.md)).
+
 ## Repository layout
 
 ```text
@@ -44,7 +46,8 @@ data/               generated output (gitignored; reproducible from code + confi
   ground_truth/     log of planted issues, used only for scoring (never loaded)
 ingest/             loads data/raw into a DuckDB `raw` schema (stand-in for Snowflake RAW)
 dbt/                dbt project: staging, intermediate and mart models, tests, docs (DuckDB now, Snowflake later)
-docs/decisions/     short records of key design decisions (0001–0007)
+governance/         Level 3 preview: policy gateway, MCP server, Qwen agent, control tests, red-team prompts
+docs/decisions/     short records of key design decisions (0001–0009)
 docs/diagrams/      architecture diagrams as Mermaid code
 docs/backlog.md     agreed but not-yet-built items
 .github/workflows/  CI: regenerate at 5% scale and run audit checks on every push
@@ -105,7 +108,7 @@ into the warehouse). See decision 0005 for why they are planted in two different
 | Meta restatements | Meta insights | First extract understates conversions; finals arrive 3 days later; latest 3 days stay provisional | 24, 29 |
 | Duplicate and late events | web events | ~0.5% retry duplicates (same `event_id`) and ~2% late arrivals | pipeline tests |
 
-Same seed + same config = identical output.
+Same seed + same config + the pinned library versions in `requirements.txt` = identical output. `python generator/reconcile.py` checks a build against the signed-off reference totals ([decision 0009](docs/decisions/0009-pin-versions-and-reconcile-data.md)).
 
 ## Level pages and tags
 
@@ -114,5 +117,5 @@ Same seed + same config = identical output.
 | 0 Data foundation | In progress | [level-0](docs/levels/level-0.md) | generator-v1 |
 | 1 Naive baseline | Planned | none yet | none yet |
 | 2 Context layer | Planned | none yet | none yet |
-| 3 MCP + governance | Planned | none yet | none yet |
+| 3 MCP + governance | Preview built ([governance/](governance/README.md)); benchmark not yet run | none yet | none yet |
 | 4+ Gated extensions | Planned | none yet | none yet |
