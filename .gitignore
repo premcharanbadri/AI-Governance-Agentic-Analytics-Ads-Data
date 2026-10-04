@@ -30,3 +30,6 @@ dbt/*.duckdb.wal
 
 # dbt creates this locally (anonymous user id)
 **/.user.yml
+
+# Governance audit logs (reports in governance/reports/ are committed after sign-off)
+governance/logs/

@@ -1,0 +1,27 @@
+# Governance layer settings (Level 3 preview). Read by the gateway, the MCP server and the agent.
+# Role, thresholds and tool permissions are set here and at server start, never by the model.
+
+warehouse:
+  db_path: dbt/lumen.duckdb
+  dbt_manifest: dbt/target/manifest.json     # PII classifications are read from dbt column meta
+  reporting_timezone: America/New_York       # decision 0007
+  as_of_date: "2026-09-30"                   # decision 0004
+  allowed_schemas: [staging, intermediate]   # raw is never reachable through the gateway
+
+privacy:
+  min_group_size: 10        # small-cell suppression threshold (benchmark Q49)
+  max_rows: 500             # cap on rows returned by any tool
+
+roles:
+  analyst:
+    tools: [resolve_metric, query_certified_metric, check_freshness, get_lineage, request_data_change]
+  data_engineer:
+    tools: [resolve_metric, query_certified_metric, check_freshness, get_lineage, request_data_change, run_sql]
+
+audit_log: governance/logs/audit.jsonl
+
+agent:
+  backend: ollama
+  model: qwen3:8b           # 16 GB Mac: an ~8B model in 4-bit. Record the exact digest in findings.
+  temperature: 0
+  max_steps: 6
